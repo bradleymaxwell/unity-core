@@ -1,0 +1,17 @@
+{
+    "name": "BinhoGames.Core.Tests",
+    "rootNamespace": "BinhoGames.Core.Tests",
+    "references": [
+        "GUID:23b5630ae1fd84a8ea703aae7a443a65",
+        "GUID:27619889b8ba8c24980f49ee34dbb44a"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
