@@ -1,9 +1,9 @@
 {
   "name": "com.binhogames.core",
   "version": "0.1.0",
-  "displayName": "Binho Games - Core",
-  "description": "Library of core systems that unity games are built on top of",
-  "unity": "6000.2.8",
+  "displayName": "BinhoGames Core",
+  "description": "Library of core systems that unity games following BinhoGames architecture style are built on top of",
+  "unity": "6000.2",
   "dependencies": {
     "com.unity.addressables": "2.7.6",
     "com.unity.inputsystem": "1.14.2",
