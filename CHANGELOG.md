@@ -1,4 +1,11 @@
-## 0.1.0 - First Developmental Release
+## 0.2.0 - [24-12-2025]
+### Features
+- **Config** - Centralized point for setting up and managing references to custom config data containers defined using scriptable objects, set up during the initial bootstrap using parameters that are editable in the inspector.
+
+### Removals
+- Scenes - Start scene bootstrapper was removed because it is specific to whatever the game needs when the initial core flow is complete, so it is not needed in this package.
+
+## 0.1.0 - First Developmental Release [23-12-2025]
 ### Features
 - **Assets** - Asynchronous loading and unloading of assets utilizing Addressables.
 - **Dependencies** - Locator pattern that manages singleton dependencies which any object at runtime can access.
