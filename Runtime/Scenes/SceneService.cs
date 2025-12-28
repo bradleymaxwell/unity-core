@@ -40,8 +40,8 @@ public class SceneService
         
         load.allowSceneActivation = false;
         yield return new WaitUntil(() => load.progress >= 0.9f);
-        yield return WaitUntilBootstrapperFinished(sceneName);
         load.allowSceneActivation = true;
+        yield return WaitUntilBootstrapperFinished(sceneName);
         _sceneHistory.Push(sceneName);
 
         if (scenesToUnloadNames == null)
