@@ -4,7 +4,6 @@
   "displayName": "BinhoGames Core",
   "description": "Library of core systems that unity games following BinhoGames architecture style are built on top of",
   "unity": "6000.2",
-  "changelogUrl": "https://github.com/bradleymaxwell/unity-core/blob/main/CHANGELOG.md",
   "dependencies": {
     "com.unity.addressables": "2.7.6",
     "com.unity.inputsystem": "1.14.2",
