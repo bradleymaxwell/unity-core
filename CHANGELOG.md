@@ -1,6 +1,10 @@
+## [0.3.0] - 29-12-2025
+### Features
+- **Scenes** - Loaded scenes can now be automatically and manually made the actively displayed scene, as well as independent scene unloading as before it was only supported while loading another scene. 
+
 ## [0.2.1] - 28-12-2025
 ### Bugfixes
-- **Scenes** - infinite scene load fixed
+- **Scenes** - Infinite scene load fixed.
 
 ## [0.2.0] - 24-12-2025
 ### Features

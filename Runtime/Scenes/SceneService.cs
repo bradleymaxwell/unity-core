@@ -8,6 +8,8 @@ public class SceneService
     private readonly CoroutineRunner _coroutineRunner;
     private readonly Logger _logger;
     private readonly Stack<string> _sceneHistory = new();
+    private readonly Dictionary<string, Scene> _loadedScenesByName = new();
+    public string ActiveSceneName => _sceneHistory.Count > 0 ? _sceneHistory.Peek() : string.Empty;
     
     public SceneService() : this(Locator.Get<CoroutineRunner>())
     {
@@ -19,17 +21,60 @@ public class SceneService
         _logger = new Logger(nameof(SceneService));
     }
     
-    public void Load(string sceneName, List<string> scenesToUnloadNames = null)
+    public void Load(string sceneName, List<string> scenesToUnloadNames = null, bool setActive = true)
     {
-        _coroutineRunner.StartCoroutine(LoadCor(sceneName, scenesToUnloadNames));
+        if (_loadedScenesByName.ContainsKey(sceneName))
+        {
+            _logger.LogWarning($"Scene: {sceneName} is already loaded");
+            return;
+        }
+        
+        _coroutineRunner.StartCoroutine(LoadCor(sceneName, scenesToUnloadNames, setActive));
     }
 
-    public void Load(string sceneName, string sceneToUnload)
+    public void Load(string sceneName, string sceneToUnload, bool setActive = true)
     {
-        Load(sceneName, new List<string> { sceneToUnload });
+        Load(sceneName, new List<string> { sceneToUnload }, setActive);
     }
 
-    private IEnumerator LoadCor(string sceneName, List<string> scenesToUnloadNames)
+    public void SetActive(string sceneName)
+    {
+        if (string.Equals(sceneName, ActiveSceneName))
+        {
+            _logger.LogWarning($"Scene: {sceneName} is already active");
+            return;
+        }
+        
+        var isLoaded = _loadedScenesByName.TryGetValue(sceneName, out var scene);
+        if (!isLoaded)
+        {
+            _logger.LogError($"Cannot activate scene: {sceneName} because it is not loaded");
+            return;
+        }
+
+        SetActive(scene);
+    }
+
+    public void Unload(string sceneName)
+    {
+        if (string.Equals(sceneName, ActiveSceneName))
+        {
+            _logger.LogError($"Scene: {sceneName} is the active scene, and only non-active scenes are allowed to be unloaded");
+            return;
+        }
+        
+        var isLoaded = _loadedScenesByName.TryGetValue(sceneName, out var scene);
+        if (!isLoaded)
+        {
+            _logger.LogError($"Cannot unload scene: {sceneName} because it is not loaded");
+            return;
+        }
+
+        SceneManager.UnloadSceneAsync(scene);
+        _loadedScenesByName.Remove(sceneName);
+    }
+
+    private IEnumerator LoadCor(string sceneName, List<string> scenesToUnloadNames, bool setActive)
     {
         var load = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
         if (load == null)
@@ -37,27 +82,37 @@ public class SceneService
             _logger.LogError($"Failed to load scene {sceneName}");
             yield break;
         }
-        
+
         load.allowSceneActivation = false;
         yield return new WaitUntil(() => load.progress >= 0.9f);
         load.allowSceneActivation = true;
-        yield return WaitUntilBootstrapperFinished(sceneName);
-        _sceneHistory.Push(sceneName);
+        var scene = SceneManager.GetSceneByName(sceneName);
+        yield return WaitUntilBootstrapperFinished(scene);
+        _loadedScenesByName.Add(sceneName, scene);
+        if (setActive)
+        {
+            SetActive(scene);
+        }
 
         if (scenesToUnloadNames == null)
         {
             yield break;
         }
-        
+
         foreach (var sceneNameToUnload in scenesToUnloadNames)
         {
-            SceneManager.UnloadSceneAsync(sceneNameToUnload);
+            Unload(sceneNameToUnload);
         }
     }
 
-    private IEnumerator WaitUntilBootstrapperFinished(string sceneName)
+    private void SetActive(Scene scene)
     {
-        var scene = SceneManager.GetSceneByName(sceneName);
+        SceneManager.SetActiveScene(scene);
+        _sceneHistory.Push(scene.name);
+    }
+
+    private IEnumerator WaitUntilBootstrapperFinished(Scene scene)
+    {
         yield return new WaitUntil(() => scene.isLoaded);
         
         var gameObjects = scene.GetRootGameObjects();
@@ -74,7 +129,7 @@ public class SceneService
 
         if (!bootstrapper)
         {
-            _logger.LogWarning($"Could not find bootstrapper for {sceneName} so transitioning to {sceneName} immediately");
+            _logger.LogWarning($"Could not find bootstrapper for {scene.name} so transitioning to {scene.name} immediately");
             yield break;
         }
 
