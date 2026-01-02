@@ -117,6 +117,7 @@ public class SceneService
         }
         
         _logger.Log($"Showing scene: {sceneData.Name}");
+        SceneManager.SetActiveScene(sceneData.Scene);
         _shownScenes.Add(sceneData.Name);
         if (sceneData.Lifecycle.Bootstrapper && !sceneData.Lifecycle.Bootstrapper.IsComplete)
         {

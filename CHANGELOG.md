@@ -1,3 +1,7 @@
+## [0.5.2] - 02-01-2026
+### Bugfixes
+- **Scenes** - Fixed missing line setting the scene that is being shown as active via the unity scene manager.
+
 ## [0.5.1] - 02-01-2026
 ### Bugfixes
 - **Scenes** - When showing a scene part of the navigation flow, we need to wait for the active scene to finish being hidden before we complete the show new scene coroutine, so that there are no race conditions with transition overlaps and when trying to unload the previous active scene immediately after.
