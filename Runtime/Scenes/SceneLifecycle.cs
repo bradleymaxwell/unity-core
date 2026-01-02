@@ -12,10 +12,10 @@ namespace BinhoGames.Core
             Bootstrapper = GetComponent<SceneBootstrapper>();
         }
 
-        public abstract IEnumerator OnBeforeShow();
-        public abstract IEnumerator OnShow();
-        public abstract IEnumerator OnHide();
-        public abstract IEnumerator OnAfterHide();
-        public abstract void HideImmediate();
+        public abstract IEnumerator OnBeforeShow(SceneData sceneData);
+        public abstract IEnumerator OnShow(SceneData sceneData);
+        public abstract IEnumerator OnHide(SceneData sceneData);
+        public abstract IEnumerator OnAfterHide(SceneData sceneData);
+        public abstract void HideImmediate(SceneData sceneData);
     }
 }

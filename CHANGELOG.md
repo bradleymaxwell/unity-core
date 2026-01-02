@@ -1,3 +1,7 @@
+## [0.6.0] - 02-01-2026
+### Features
+- **Scenes** - SceneUtil to separate responsibility of gathering SceneData. Also finding all the scene's lights and passing the scene data through to the lifecycle hooks if a scene needs any information such as what lights to turn on and off.
+
 ## [0.5.2] - 02-01-2026
 ### Bugfixes
 - **Scenes** - Fixed missing line setting the scene that is being shown as active via the unity scene manager.

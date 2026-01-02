@@ -22,7 +22,7 @@ public class SceneService
         _logger = new Logger(nameof(SceneService));
         
         var initScene = SceneManager.GetSceneByName(SceneNames.InitScene);
-        var initSceneData = CreateSceneData(initScene);
+        var initSceneData = SceneUtils.CreateSceneData(initScene);
         OnSceneLoaded(initSceneData);
     }
     
@@ -55,7 +55,7 @@ public class SceneService
         load.allowSceneActivation = true;
         var scene = SceneManager.GetSceneByName(sceneName);
         yield return new WaitUntil(() => scene.isLoaded);
-        var sceneData = CreateSceneData(scene);
+        var sceneData = SceneUtils.CreateSceneData(scene);
         OnSceneLoaded(sceneData);
     }
     
@@ -124,7 +124,7 @@ public class SceneService
             yield return new WaitUntil(() => sceneData.Lifecycle.Bootstrapper.IsComplete);
         }
         
-        yield return sceneData.Lifecycle.OnBeforeShow();
+        yield return sceneData.Lifecycle.OnBeforeShow(sceneData);
         if (addToHistory)
         {
             var anotherSceneActive = _sceneHistory.TryPeek(out var activeSceneName);
@@ -136,7 +136,7 @@ public class SceneService
             _sceneHistory.Push(sceneData.Name);
         }
         
-        yield return sceneData.Lifecycle.OnShow();
+        yield return sceneData.Lifecycle.OnShow(sceneData);
     }
 
     private IEnumerator HideCor(string sceneName)
@@ -155,8 +155,8 @@ public class SceneService
         }
         
         _logger.Log($"Hiding scene: {sceneName}");
-        yield return sceneData.Lifecycle.OnHide();
-        yield return sceneData.Lifecycle.OnAfterHide();
+        yield return sceneData.Lifecycle.OnHide(sceneData);
+        yield return sceneData.Lifecycle.OnAfterHide(sceneData);
         _shownScenes.Remove(sceneData.Name);
         var activeSceneData = GetActiveSceneData();
         if (sceneData.Name.Equals(activeSceneData.Name))
@@ -173,43 +173,7 @@ public class SceneService
     private void OnSceneLoaded(SceneData sceneData)
     {
         _loadedSceneDataByName.Add(sceneData.Name, sceneData);
-        sceneData.Lifecycle.HideImmediate();
-    }
-    
-    private static bool TryGetComponent<T>(GameObject[] gameObjects, out T component)
-    {
-        foreach (var gameObject in gameObjects)
-        {
-            var foundComponent = gameObject.GetComponentInChildren<T>(true);
-            if (foundComponent != null)
-            {
-                component = foundComponent;
-                return true;
-            }
-        }
-
-        component = default;
-        return false;
-    }
-    
-    private SceneData CreateSceneData(Scene scene)
-    {
-        var gameObjects = scene.GetRootGameObjects();
-        var lifecycleFound = TryGetComponent<SceneLifecycle>(gameObjects, out var lifecycle);
-        if (!lifecycleFound)
-        {
-            _logger.LogError($"Scene: {scene.name} is missing {nameof(SceneLifecycle)}");
-            return null;
-        }
-
-        var sceneData = new SceneData
-        {
-            Name = scene.name,
-            Scene = scene,
-            Lifecycle = lifecycle
-        };
-        
-        return sceneData;
+        sceneData.Lifecycle.HideImmediate(sceneData);
     }
 
     private SceneData GetActiveSceneData()

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace BinhoGames.Core
@@ -7,5 +9,6 @@ namespace BinhoGames.Core
         public string Name { get; set; }
         public Scene Scene { get; set; }
         public SceneLifecycle Lifecycle { get; set; }
+        public HashSet<Light> Lights { get; set; }
     }
 }
