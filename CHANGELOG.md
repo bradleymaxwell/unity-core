@@ -1,3 +1,7 @@
+## [0.7.0] - 02-01-2026
+### Features
+- **Config** - Constants static class providing consistent path naming for where to find game config and config container in the inspector dropdown.
+
 ## [0.6.0] - 02-01-2026
 ### Features
 - **Scenes** - SceneUtil to separate responsibility of gathering SceneData. Also finding all the scene's lights and passing the scene data through to the lifecycle hooks if a scene needs any information such as what lights to turn on and off.
