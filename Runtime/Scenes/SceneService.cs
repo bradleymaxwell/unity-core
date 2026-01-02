@@ -124,18 +124,18 @@ public class SceneService
         }
         
         yield return sceneData.Lifecycle.OnBeforeShow();
-        yield return sceneData.Lifecycle.OnShow();
-        
         if (addToHistory)
         {
             var anotherSceneActive = _sceneHistory.TryPeek(out var activeSceneName);
             if (anotherSceneActive)
             {
-                Hide(activeSceneName);
+                yield return HideCor(activeSceneName);
             }
             
             _sceneHistory.Push(sceneData.Name);
         }
+        
+        yield return sceneData.Lifecycle.OnShow();
     }
 
     private IEnumerator HideCor(string sceneName)
