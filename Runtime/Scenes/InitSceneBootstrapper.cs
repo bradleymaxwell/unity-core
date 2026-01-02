@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using BinhoGames.Core;
 using UnityEngine;
@@ -8,9 +9,9 @@ public class InitSceneBootstrapper : SceneBootstrapper
     [SerializeField] private string nextSceneName;
     [SerializeField] private InputActionAsset playerInput;
     [SerializeField] private List<ConfigContainer> configContainers = new();
-    protected override BootstrapType BootstrapType => BootstrapType.Sync;
-    
-    protected override void OnBootstrap()
+    protected override BootstrapType BootstrapType => BootstrapType.Async;
+
+    protected override IEnumerator OnBootstrapCor()
     {
         var coroutineRunnerGameObject = new GameObject(nameof(CoroutineRunner));
         var coroutineRunner = coroutineRunnerGameObject.AddComponent<CoroutineRunner>();
@@ -31,6 +32,7 @@ public class InitSceneBootstrapper : SceneBootstrapper
         Locator.Register(configService);
         
         nextSceneName = string.IsNullOrWhiteSpace(nextSceneName) ? SceneNames.StartScene : nextSceneName;
-        sceneService.Load(nextSceneName, SceneNames.InitScene);
+        yield return sceneService.ShowCor(nextSceneName);
+        sceneService.Unload(SceneNames.InitScene);
     }
 }

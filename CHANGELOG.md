@@ -1,3 +1,7 @@
+## [0.4.0] - 02-01-2026
+### Features
+- **Scenes** - Introduced SceneLifecycle to allow better control over visually hiding and showing scenes, as well as clear separation between load, show, hide, and show scene operations with support for automatic pre-loading a scene before being shown.
+
 ## [0.3.0] - 29-12-2025
 ### Features
 - **Scenes** - Loaded scenes can now be automatically and manually made the actively displayed scene, as well as independent scene unloading as before it was only supported while loading another scene. 

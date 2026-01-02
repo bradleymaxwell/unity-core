@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using BinhoGames.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -8,8 +9,8 @@ public class SceneService
     private readonly CoroutineRunner _coroutineRunner;
     private readonly Logger _logger;
     private readonly Stack<string> _sceneHistory = new();
-    private readonly Dictionary<string, Scene> _loadedScenesByName = new();
-    public string ActiveSceneName => _sceneHistory.Count > 0 ? _sceneHistory.Peek() : string.Empty;
+    private readonly Dictionary<string, SceneData> _loadedSceneDataByName = new();
+    private readonly List<string> _shownScenes = new();
     
     public SceneService() : this(Locator.Get<CoroutineRunner>())
     {
@@ -19,120 +20,207 @@ public class SceneService
     {
         _coroutineRunner = coroutineRunner;
         _logger = new Logger(nameof(SceneService));
+        
+        var initScene = SceneManager.GetSceneByName(SceneNames.InitScene);
+        var initSceneData = CreateSceneData(initScene);
+        OnSceneLoaded(initSceneData);
     }
     
-    public void Load(string sceneName, List<string> scenesToUnloadNames = null, bool setActive = true)
+    public void Load(string sceneName)
     {
-        if (_loadedScenesByName.ContainsKey(sceneName))
+        _coroutineRunner.StartCoroutine(LoadCor(sceneName));
+    }
+    
+    public IEnumerator LoadCor(string sceneName, bool skipValidation = false)
+    {
+        if (!skipValidation)
         {
-            _logger.LogWarning($"Scene: {sceneName} is already loaded");
-            return;
+            if (_loadedSceneDataByName.ContainsKey(sceneName))
+            {
+                _logger.LogError($"Scene: {sceneName} is already loaded");
+                yield break;
+            }
         }
         
-        _coroutineRunner.StartCoroutine(LoadCor(sceneName, scenesToUnloadNames, setActive));
-    }
-
-    public void Load(string sceneName, string sceneToUnload, bool setActive = true)
-    {
-        Load(sceneName, new List<string> { sceneToUnload }, setActive);
-    }
-
-    public void SetActive(string sceneName)
-    {
-        if (string.Equals(sceneName, ActiveSceneName))
-        {
-            _logger.LogWarning($"Scene: {sceneName} is already active");
-            return;
-        }
-        
-        var isLoaded = _loadedScenesByName.TryGetValue(sceneName, out var scene);
-        if (!isLoaded)
-        {
-            _logger.LogError($"Cannot activate scene: {sceneName} because it is not loaded");
-            return;
-        }
-
-        SetActive(scene);
-    }
-
-    public void Unload(string sceneName)
-    {
-        if (string.Equals(sceneName, ActiveSceneName))
-        {
-            _logger.LogError($"Scene: {sceneName} is the active scene, and only non-active scenes are allowed to be unloaded");
-            return;
-        }
-        
-        var isLoaded = _loadedScenesByName.TryGetValue(sceneName, out var scene);
-        if (!isLoaded)
-        {
-            _logger.LogError($"Cannot unload scene: {sceneName} because it is not loaded");
-            return;
-        }
-
-        SceneManager.UnloadSceneAsync(scene);
-        _loadedScenesByName.Remove(sceneName);
-    }
-
-    private IEnumerator LoadCor(string sceneName, List<string> scenesToUnloadNames, bool setActive)
-    {
         var load = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
         if (load == null)
         {
             _logger.LogError($"Failed to load scene {sceneName}");
             yield break;
         }
-
+        
+        _logger.Log($"Loading scene: {sceneName}");
         load.allowSceneActivation = false;
         yield return new WaitUntil(() => load.progress >= 0.9f);
         load.allowSceneActivation = true;
         var scene = SceneManager.GetSceneByName(sceneName);
-        yield return WaitUntilBootstrapperFinished(scene);
-        _loadedScenesByName.Add(sceneName, scene);
-        if (setActive)
+        yield return new WaitUntil(() => scene.isLoaded);
+        var sceneData = CreateSceneData(scene);
+        OnSceneLoaded(sceneData);
+    }
+    
+    public void Unload(string sceneName)
+    {
+        if (_shownScenes.Contains(sceneName))
         {
-            SetActive(scene);
+            _logger.LogError($"Cannot unload scene {sceneName} because it is being shown and needs to be hidden before unloaded");
+            return;
         }
-
-        if (scenesToUnloadNames == null)
+        
+        var isLoaded = _loadedSceneDataByName.TryGetValue(sceneName, out var sceneData);
+        if (!isLoaded)
         {
+            _logger.LogWarning($"Cannot unload scene: {sceneName} because it is already unloaded");
+            return;
+        }
+        
+        _logger.Log($"Unloading scene: {sceneName}");
+        SceneManager.UnloadSceneAsync(sceneData.Scene);
+        _loadedSceneDataByName.Remove(sceneName);
+    }
+
+    public void Show(string sceneName, bool addToHistory = true, bool autoLoad = true)
+    {
+        _coroutineRunner.StartCoroutine(ShowCor(sceneName, addToHistory, autoLoad));
+    }
+
+    public void Hide(string sceneName)
+    {
+        if (!_shownScenes.Contains(sceneName))
+        {
+            _logger.LogWarning($"Cannot hide scene: {sceneName} because it is already not being shown");
+            return;
+        }
+        
+        var isLoaded = _loadedSceneDataByName.TryGetValue(sceneName, out var sceneData);
+        if (!isLoaded)
+        {
+            _logger.LogError($"Cannot hide scene: {sceneName} because it is not loaded");
+            return;
+        }
+        
+        _logger.Log($"Hiding scene: {sceneName}");
+        _coroutineRunner.StartCoroutine(HideCor(sceneData));
+    }
+    
+    public IEnumerator ShowCor(string sceneName, bool addToHistory = true, bool autoLoad = true)
+    {
+        if (_shownScenes.Contains(sceneName))
+        {
+            _logger.LogWarning($"{sceneName} is already being shown");
             yield break;
         }
-
-        foreach (var sceneNameToUnload in scenesToUnloadNames)
+        
+        var isLoaded = _loadedSceneDataByName.TryGetValue(sceneName, out var sceneData);
+        if (!isLoaded)
         {
-            Unload(sceneNameToUnload);
+            if (!autoLoad)
+            {
+                _logger.LogError($"Cannot show scene: {sceneName} because it is not loaded");
+                yield break;
+            }
+
+            yield return LoadCor(sceneName, skipValidation: true);
+            if (!_loadedSceneDataByName.TryGetValue(sceneName, out var loadedSceneData))
+            {
+                _logger.LogError($"Cannot show scene: {sceneName} because the automatic load failed");
+                yield break;
+            }
+
+            sceneData = loadedSceneData;
+        }
+        
+        _logger.Log($"Showing scene: {sceneData.Name}");
+        _shownScenes.Add(sceneData.Name);
+        if (addToHistory)
+        {
+            SceneManager.SetActiveScene(sceneData.Scene);
+            _sceneHistory.Push(sceneData.Name);
+        }
+
+        if (sceneData.Lifecycle.Bootstrapper && !sceneData.Lifecycle.Bootstrapper.IsComplete)
+        {
+            yield return new WaitUntil(() => sceneData.Lifecycle.Bootstrapper.IsComplete);
+        }
+        
+        yield return sceneData.Lifecycle.OnBeforeShow();
+        yield return sceneData.Lifecycle.OnShow();
+    }
+
+    private IEnumerator HideCor(SceneData sceneData)
+    {
+        yield return sceneData.Lifecycle.OnHide();
+        yield return sceneData.Lifecycle.OnAfterHide();
+        _shownScenes.Remove(sceneData.Name);
+        var activeSceneData = GetActiveSceneData();
+        if (sceneData.Name.Equals(activeSceneData.Name))
+        {
+            _sceneHistory.Pop();
+            var newActiveSceneData = GetActiveSceneData();
+            if (newActiveSceneData != null)
+            {
+                SceneManager.SetActiveScene(newActiveSceneData.Scene);
+            }
         }
     }
 
-    private void SetActive(Scene scene)
+    private void OnSceneLoaded(SceneData sceneData)
     {
-        SceneManager.SetActiveScene(scene);
-        _sceneHistory.Push(scene.name);
+        _loadedSceneDataByName.Add(sceneData.Name, sceneData);
+        sceneData.Lifecycle.HideImmediate();
     }
-
-    private IEnumerator WaitUntilBootstrapperFinished(Scene scene)
+    
+    private static bool TryGetComponent<T>(GameObject[] gameObjects, out T component)
     {
-        yield return new WaitUntil(() => scene.isLoaded);
-        
-        var gameObjects = scene.GetRootGameObjects();
-        SceneBootstrapper bootstrapper = null;
         foreach (var gameObject in gameObjects)
         {
-            var component = gameObject.GetComponentInChildren<SceneBootstrapper>();
-            if (component)
+            var foundComponent = gameObject.GetComponentInChildren<T>(true);
+            if (foundComponent != null)
             {
-                bootstrapper = component;
-                break;
+                component = foundComponent;
+                return true;
             }
         }
 
-        if (!bootstrapper)
+        component = default;
+        return false;
+    }
+    
+    private SceneData CreateSceneData(Scene scene)
+    {
+        var gameObjects = scene.GetRootGameObjects();
+        var lifecycleFound = TryGetComponent<SceneLifecycle>(gameObjects, out var lifecycle);
+        if (!lifecycleFound)
         {
-            _logger.LogWarning($"Could not find bootstrapper for {scene.name} so transitioning to {scene.name} immediately");
-            yield break;
+            _logger.LogError($"Scene: {scene.name} is missing {nameof(SceneLifecycle)}");
+            return null;
         }
 
-        yield return new WaitUntil(() => bootstrapper.IsFinished);
+        var sceneData = new SceneData
+        {
+            Name = scene.name,
+            Scene = scene,
+            Lifecycle = lifecycle
+        };
+        
+        return sceneData;
+    }
+
+    private SceneData GetActiveSceneData()
+    {
+        var hasActiveScene = _sceneHistory.TryPeek(out var activeSceneName);
+        if (!hasActiveScene)
+        {
+            return null;
+        }
+        
+        var isLoaded = _loadedSceneDataByName.TryGetValue(activeSceneName, out var sceneData);
+        if (!isLoaded)
+        {
+            _logger.LogError($"scene: {activeSceneName} is tracked as the active scene but it's scene data is missing, indicating its not loaded");
+            return null;
+        }
+        
+        return sceneData;
     }
 }

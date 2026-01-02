@@ -3,18 +3,18 @@ using UnityEngine;
 
 public abstract class SceneBootstrapper : MonoBehaviour
 {
-    public bool IsFinished { get; private set; }
+    public bool IsComplete { get; private set; }
     protected abstract BootstrapType BootstrapType { get; }
     
     private void Awake()
     {
-        IsFinished = false;
+        IsComplete = false;
         if (BootstrapType is BootstrapType.Sync or BootstrapType.Both)
         {
             OnBootstrap();
             if (BootstrapType is BootstrapType.Sync)
             {
-                IsFinished = true;
+                IsComplete = true;
                 return;
             }
         }
@@ -34,7 +34,7 @@ public abstract class SceneBootstrapper : MonoBehaviour
     private IEnumerator BootstrapCor()
     {
         yield return OnBootstrapCor();
-        IsFinished = true;
+        IsComplete = true;
     }
 }
 
