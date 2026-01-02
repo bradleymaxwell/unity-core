@@ -1,3 +1,7 @@
+## [0.5.0] - 02-01-2026
+### Features
+- **Scenes** - Showing scenes that are part of the scene service's navigation subsystem automatically hide the previously actively shown scene, maintaining a consistent one visible scene at a time rule. 
+
 ## [0.4.0] - 02-01-2026
 ### Features
 - **Scenes** - Introduced SceneLifecycle to allow better control over visually hiding and showing scenes, as well as clear separation between load, show, hide, and show scene operations with support for automatic pre-loading a scene before being shown.

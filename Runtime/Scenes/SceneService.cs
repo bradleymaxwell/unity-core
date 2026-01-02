@@ -86,21 +86,7 @@ public class SceneService
 
     public void Hide(string sceneName)
     {
-        if (!_shownScenes.Contains(sceneName))
-        {
-            _logger.LogWarning($"Cannot hide scene: {sceneName} because it is already not being shown");
-            return;
-        }
-        
-        var isLoaded = _loadedSceneDataByName.TryGetValue(sceneName, out var sceneData);
-        if (!isLoaded)
-        {
-            _logger.LogError($"Cannot hide scene: {sceneName} because it is not loaded");
-            return;
-        }
-        
-        _logger.Log($"Hiding scene: {sceneName}");
-        _coroutineRunner.StartCoroutine(HideCor(sceneData));
+        _coroutineRunner.StartCoroutine(HideCor(sceneName));
     }
     
     public IEnumerator ShowCor(string sceneName, bool addToHistory = true, bool autoLoad = true)
@@ -132,12 +118,6 @@ public class SceneService
         
         _logger.Log($"Showing scene: {sceneData.Name}");
         _shownScenes.Add(sceneData.Name);
-        if (addToHistory)
-        {
-            SceneManager.SetActiveScene(sceneData.Scene);
-            _sceneHistory.Push(sceneData.Name);
-        }
-
         if (sceneData.Lifecycle.Bootstrapper && !sceneData.Lifecycle.Bootstrapper.IsComplete)
         {
             yield return new WaitUntil(() => sceneData.Lifecycle.Bootstrapper.IsComplete);
@@ -145,10 +125,35 @@ public class SceneService
         
         yield return sceneData.Lifecycle.OnBeforeShow();
         yield return sceneData.Lifecycle.OnShow();
+        
+        if (addToHistory)
+        {
+            var anotherSceneActive = _sceneHistory.TryPeek(out var activeSceneName);
+            if (anotherSceneActive)
+            {
+                Hide(activeSceneName);
+            }
+            
+            _sceneHistory.Push(sceneData.Name);
+        }
     }
 
-    private IEnumerator HideCor(SceneData sceneData)
+    private IEnumerator HideCor(string sceneName)
     {
+        if (!_shownScenes.Contains(sceneName))
+        {
+            _logger.LogWarning($"Cannot hide scene: {sceneName} because it is already not being shown");
+            yield break;
+        }
+        
+        var isLoaded = _loadedSceneDataByName.TryGetValue(sceneName, out var sceneData);
+        if (!isLoaded)
+        {
+            _logger.LogError($"Cannot hide scene: {sceneName} because it is not loaded");
+            yield break;
+        }
+        
+        _logger.Log($"Hiding scene: {sceneName}");
         yield return sceneData.Lifecycle.OnHide();
         yield return sceneData.Lifecycle.OnAfterHide();
         _shownScenes.Remove(sceneData.Name);
