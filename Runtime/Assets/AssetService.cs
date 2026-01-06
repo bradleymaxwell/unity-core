@@ -18,6 +18,24 @@ public class AssetService
     {
         _logger = logger;
     }
+
+    public async UniTask<T> GetAsync<T>(AssetReference asset, bool lazyLoad = true) where T : class
+    {
+        if (IsLoaded(asset))
+        {
+            return _loadsByAsset[asset] as T;
+        }
+
+        if (!lazyLoad)
+        {
+            _logger.LogError($"Can't get asset {asset} because it is not loaded");
+            return null;
+        }
+        
+        _logger.LogWarning($"{asset} was not loaded and needed to be lazily loaded");
+        var loadedAsset = await LoadAsync<T>(asset);
+        return loadedAsset;
+    }
     
     public async UniTask<T> LoadAsync<T>(AssetReference asset, Action<T> onLoaded = null)
     {
