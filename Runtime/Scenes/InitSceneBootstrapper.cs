@@ -32,7 +32,7 @@ public class InitSceneBootstrapper : SceneBootstrapper
         Locator.Register(configService);
         
         nextSceneName = string.IsNullOrWhiteSpace(nextSceneName) ? SceneNames.StartScene : nextSceneName;
-        yield return sceneService.ShowCor(nextSceneName);
-        sceneService.Unload(SceneNames.InitScene);
+        yield return sceneService.ShowAsync(nextSceneName);
+        sceneService.UnloadAsync(SceneNames.InitScene);
     }
 }

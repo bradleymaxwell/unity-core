@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
@@ -18,18 +19,19 @@ public class AssetService
         _logger = logger;
     }
     
-    public IEnumerator LoadCor<T>(AssetReference asset, Action<T> onLoaded = null)
+    public async UniTask<T> LoadAsync<T>(AssetReference asset, Action<T> onLoaded = null)
     {
         var load = Addressables.LoadAssetAsync<T>(asset);
-        yield return load;
+        await load.ToUniTask();
         if (load.Status != AsyncOperationStatus.Succeeded)
         {
             _logger.LogError($"Failed to load asset: {asset}");
-            yield break;
+            return default;
         }
         
         onLoaded?.Invoke(load.Result);
-        _loadsByAsset[asset] = load; 
+        _loadsByAsset[asset] = load;
+        return load.Result;
     }
 
     public void Unload(AssetReference asset)
@@ -37,10 +39,16 @@ public class AssetService
         if (_loadsByAsset.TryGetValue(asset, out var load))
         {
             load.Release();
+            _loadsByAsset.Remove(asset);
         }
         else
         {
             _logger.LogWarning($"Failed to unload asset: {asset} as it is unloaded");
         }
+    }
+
+    public bool IsLoaded(AssetReference asset)
+    {
+        return _loadsByAsset.ContainsKey(asset);
     }
 }

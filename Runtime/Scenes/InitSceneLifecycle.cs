@@ -1,26 +1,27 @@
 using System.Collections;
 using BinhoGames.Core;
+using Cysharp.Threading.Tasks;
 
 public class InitSceneLifecycle : SceneLifecycle
 {
-    public override IEnumerator OnBeforeShow(SceneData sceneData)
+    public override UniTask OnBeforeShowAsync(SceneData sceneData)
     {
-        yield break;
+        return UniTask.CompletedTask;
     }
 
-    public override IEnumerator OnShow(SceneData sceneData)
+    public override UniTask OnShowAsync(SceneData sceneData)
     {
-        yield break;
+        return UniTask.CompletedTask;
     }
 
-    public override IEnumerator OnHide(SceneData sceneData)
+    public override UniTask OnHideAsync(SceneData sceneData)
     {
-        yield break;
+        return UniTask.CompletedTask;
     }
 
-    public override IEnumerator OnAfterHide(SceneData sceneData)
+    public override UniTask OnAfterHideAsync(SceneData sceneData)
     {
-        yield break;
+        return UniTask.CompletedTask;
     }
 
     public override void HideImmediate(SceneData sceneData)

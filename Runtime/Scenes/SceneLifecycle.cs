@@ -1,4 +1,5 @@
 using System.Collections;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace BinhoGames.Core
@@ -12,10 +13,10 @@ namespace BinhoGames.Core
             Bootstrapper = GetComponent<SceneBootstrapper>();
         }
 
-        public abstract IEnumerator OnBeforeShow(SceneData sceneData);
-        public abstract IEnumerator OnShow(SceneData sceneData);
-        public abstract IEnumerator OnHide(SceneData sceneData);
-        public abstract IEnumerator OnAfterHide(SceneData sceneData);
+        public abstract UniTask OnBeforeShowAsync(SceneData sceneData);
+        public abstract UniTask OnShowAsync(SceneData sceneData);
+        public abstract UniTask OnHideAsync(SceneData sceneData);
+        public abstract UniTask OnAfterHideAsync(SceneData sceneData);
         public abstract void HideImmediate(SceneData sceneData);
     }
 }

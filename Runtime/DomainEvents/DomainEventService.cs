@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 
 public class DomainEventService
 {
@@ -43,7 +44,7 @@ public class DomainEventService
         }
     }
 
-    public void Raise<T>(T domainEvent) where T : DomainEvent
+    public async UniTask RaiseAsync<T>(T domainEvent) where T : DomainEvent
     {
         var hasListeners = _listeners.TryGetValue(typeof(T), out var registeredListeners);
         if (!hasListeners)
@@ -58,7 +59,7 @@ public class DomainEventService
             {
                 if (listener is IDomainEventListener<T> typedListener)
                 {
-                    typedListener.OnEventRaised(domainEvent);
+                    await typedListener.OnEventRaisedAsync(domainEvent);
                 }
                 else
                 {

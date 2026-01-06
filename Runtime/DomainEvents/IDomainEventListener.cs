@@ -1,8 +1,10 @@
+using Cysharp.Threading.Tasks;
+
 public interface IDomainEventListener
 {
 }
 
 public interface IDomainEventListener<T> : IDomainEventListener where T : DomainEvent
 {
-    void OnEventRaised(T domainEvent);
+    UniTask OnEventRaisedAsync(T domainEvent);
 }

@@ -1,3 +1,9 @@
+## [0.8.0] - 06-01-2026
+### Features
+- **Assets** - Migrated AssetService to use UniTask instead of Coroutines to await asynchronous asset loading.
+- **Scenes** - Migrated SceneService to use UniTask instead of Coroutines for scene load, show, hide, and unload.
+- **Domain Events** - OnEventRaised for each domain event listener has become OnEventRaisedAsync, for asynchronous callbacks using UniTask.
+
 ## [0.7.0] - 02-01-2026
 ### Features
 - **Config** - Constants static class providing consistent path naming for where to find game config and config container in the inspector dropdown.

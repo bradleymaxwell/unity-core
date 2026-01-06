@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -52,9 +54,9 @@ public class DomainEventServiceTests
         // Assert
         Assert.IsFalse(sut.IsRegistered(listener));
     }
-    
-    [Test]
-    public void RaiseTriggersAllListenersWhenOneListenerThrowsException()
+
+    [UnityTest]
+    public IEnumerator RaiseTriggersAllListenersWhenOneListenerThrowsException() => UniTask.ToCoroutine(async () =>
     {
         // Arrange
         var sut = new DomainEventService();
@@ -62,8 +64,8 @@ public class DomainEventServiceTests
         {
             new(),
             new BreakingTestDomainEventListener(),
-            new (),
-            new ()
+            new(),
+            new()
         };
         var domainEvent = new TestDomainEvent();
 
@@ -71,34 +73,35 @@ public class DomainEventServiceTests
         {
             sut.Register(listener);
         }
-        
-        LogAssert.Expect(LogType.Error,new Regex("Error encountered when raising"));
+
+        LogAssert.Expect(LogType.Error, new Regex("Error encountered when raising"));
 
         // Act
-        sut.Raise(domainEvent);
+        await sut.RaiseAsync(domainEvent);
 
         // Assert
         foreach (var listener in listeners)
         {
             Assert.IsTrue(listener.WasCalled);
         }
-    }
+    });
 
     private class TestDomainEventListener : IDomainEventListener<TestDomainEvent>
     {
         public bool WasCalled { get; private set; }
         
-        public virtual void OnEventRaised(TestDomainEvent domainEvent)
+        public virtual UniTask OnEventRaisedAsync(TestDomainEvent domainEvent)
         {
             WasCalled = true;
+            return UniTask.CompletedTask;
         }
     }
 
     private class BreakingTestDomainEventListener : TestDomainEventListener
     {
-        public override void OnEventRaised(TestDomainEvent domainEvent)
+        public override async UniTask OnEventRaisedAsync(TestDomainEvent domainEvent)
         {
-            base.OnEventRaised(domainEvent);
+            await base.OnEventRaisedAsync(domainEvent);
             throw new Exception();
         }
     }

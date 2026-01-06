@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using BinhoGames.Core;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -25,20 +26,15 @@ public class SceneService
         var initSceneData = SceneUtils.CreateSceneData(initScene);
         OnSceneLoaded(initSceneData);
     }
-    
-    public void Load(string sceneName)
-    {
-        _coroutineRunner.StartCoroutine(LoadCor(sceneName));
-    }
-    
-    public IEnumerator LoadCor(string sceneName, bool skipValidation = false)
+
+    public async UniTask LoadAsync(string sceneName, bool skipValidation = false)
     {
         if (!skipValidation)
         {
             if (_loadedSceneDataByName.ContainsKey(sceneName))
             {
                 _logger.LogError($"Scene: {sceneName} is already loaded");
-                yield break;
+                return;
             }
         }
         
@@ -46,20 +42,17 @@ public class SceneService
         if (load == null)
         {
             _logger.LogError($"Failed to load scene {sceneName}");
-            yield break;
+            return;
         }
         
         _logger.Log($"Loading scene: {sceneName}");
-        load.allowSceneActivation = false;
-        yield return new WaitUntil(() => load.progress >= 0.9f);
-        load.allowSceneActivation = true;
+        await load.ToUniTask();
         var scene = SceneManager.GetSceneByName(sceneName);
-        yield return new WaitUntil(() => scene.isLoaded);
         var sceneData = SceneUtils.CreateSceneData(scene);
         OnSceneLoaded(sceneData);
     }
     
-    public void Unload(string sceneName)
+    public async UniTask UnloadAsync(string sceneName)
     {
         if (_shownScenes.Contains(sceneName))
         {
@@ -75,26 +68,17 @@ public class SceneService
         }
         
         _logger.Log($"Unloading scene: {sceneName}");
-        SceneManager.UnloadSceneAsync(sceneData.Scene);
+        var unload = SceneManager.UnloadSceneAsync(sceneData.Scene);
+        await unload.ToUniTask();
         _loadedSceneDataByName.Remove(sceneName);
     }
-
-    public void Show(string sceneName, bool addToHistory = true, bool autoLoad = true)
-    {
-        _coroutineRunner.StartCoroutine(ShowCor(sceneName, addToHistory, autoLoad));
-    }
-
-    public void Hide(string sceneName)
-    {
-        _coroutineRunner.StartCoroutine(HideCor(sceneName));
-    }
     
-    public IEnumerator ShowCor(string sceneName, bool addToHistory = true, bool autoLoad = true)
+    public async UniTask ShowAsync(string sceneName, bool addToHistory = true, bool autoLoad = true)
     {
         if (_shownScenes.Contains(sceneName))
         {
             _logger.LogWarning($"{sceneName} is already being shown");
-            yield break;
+            return;
         }
         
         var isLoaded = _loadedSceneDataByName.TryGetValue(sceneName, out var sceneData);
@@ -103,14 +87,14 @@ public class SceneService
             if (!autoLoad)
             {
                 _logger.LogError($"Cannot show scene: {sceneName} because it is not loaded");
-                yield break;
+                return;
             }
 
-            yield return LoadCor(sceneName, skipValidation: true);
+            await LoadAsync(sceneName, skipValidation: true);
             if (!_loadedSceneDataByName.TryGetValue(sceneName, out var loadedSceneData))
             {
                 _logger.LogError($"Cannot show scene: {sceneName} because the automatic load failed");
-                yield break;
+                return;
             }
 
             sceneData = loadedSceneData;
@@ -121,42 +105,42 @@ public class SceneService
         _shownScenes.Add(sceneData.Name);
         if (sceneData.Lifecycle.Bootstrapper && !sceneData.Lifecycle.Bootstrapper.IsComplete)
         {
-            yield return new WaitUntil(() => sceneData.Lifecycle.Bootstrapper.IsComplete);
+            UniTask.WaitUntil(() => sceneData.Lifecycle.Bootstrapper.IsComplete);
         }
         
-        yield return sceneData.Lifecycle.OnBeforeShow(sceneData);
+        await sceneData.Lifecycle.OnBeforeShowAsync(sceneData);
         if (addToHistory)
         {
             var anotherSceneActive = _sceneHistory.TryPeek(out var activeSceneName);
             if (anotherSceneActive)
             {
-                yield return HideCor(activeSceneName);
+                await HideAsync(activeSceneName);
             }
             
             _sceneHistory.Push(sceneData.Name);
         }
         
-        yield return sceneData.Lifecycle.OnShow(sceneData);
+        await sceneData.Lifecycle.OnShowAsync(sceneData);
     }
 
-    private IEnumerator HideCor(string sceneName)
+    public async UniTask HideAsync(string sceneName)
     {
         if (!_shownScenes.Contains(sceneName))
         {
             _logger.LogWarning($"Cannot hide scene: {sceneName} because it is already not being shown");
-            yield break;
+            return;
         }
         
         var isLoaded = _loadedSceneDataByName.TryGetValue(sceneName, out var sceneData);
         if (!isLoaded)
         {
             _logger.LogError($"Cannot hide scene: {sceneName} because it is not loaded");
-            yield break;
+            return;
         }
         
         _logger.Log($"Hiding scene: {sceneName}");
-        yield return sceneData.Lifecycle.OnHide(sceneData);
-        yield return sceneData.Lifecycle.OnAfterHide(sceneData);
+        await sceneData.Lifecycle.OnHideAsync(sceneData);
+        await sceneData.Lifecycle.OnAfterHideAsync(sceneData);
         _shownScenes.Remove(sceneData.Name);
         var activeSceneData = GetActiveSceneData();
         if (sceneData.Name.Equals(activeSceneData.Name))
