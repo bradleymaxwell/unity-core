@@ -24,16 +24,16 @@ namespace BinhoGames.Core
             return null;
         }
 
-        public void Register<T>(T config) where T : ConfigContainer
+        public void Register(ConfigContainer config)
         {
-            if (_containers.ContainsKey(typeof(T)))
+            var type = config.GetType();
+            if (!_containers.TryAdd(type, config))
             {
-                _logger.LogError($"{typeof(T)} config is already registered.");
+                _logger.LogError($"{type} is already registered.");
                 return;
             }
-            
-            _containers.Add(typeof(T), config);
-            _logger.Log($"{typeof(T)} registered");
+
+            _logger.Log($"{config} registered for config type: {type}");
         }
     }
 }

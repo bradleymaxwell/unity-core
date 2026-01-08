@@ -1,3 +1,7 @@
+## [0.8.1] - 08-01-2026
+### Bugfixes
+- **Config** - Fixed config registration issue registering all config containers to the base ConfigContainer type.
+
 ## [0.8.0] - 06-01-2026
 ### Features
 - **Assets** - Migrated AssetService to use UniTask instead of Coroutines to await asynchronous asset loading.
