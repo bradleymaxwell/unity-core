@@ -1,3 +1,7 @@
+## [0.9.0] - 09-01-2026
+### Features
+- **Assets** - Added `GetAsync` method to AssetService that allows consumers to load and retrieve an asset in their desired format automatically.
+
 ## [0.8.1] - 08-01-2026
 ### Bugfixes
 - **Config** - Fixed config registration issue registering all config containers to the base ConfigContainer type.
