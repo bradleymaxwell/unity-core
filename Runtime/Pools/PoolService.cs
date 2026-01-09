@@ -37,9 +37,21 @@ public class PoolService
         _pools.Add(prefab.gameObject, pool);
     }
 
-    public T Get<T>(T prefab) where T : MonoBehaviour, IPoolable
+    public T Get<T>(GameObject prefab) where T : MonoBehaviour, IPoolable
     {
-        var pool = GetPool(prefab.gameObject);
+        if (!PoolExists(prefab))
+        {
+            var c = prefab.GetComponent<T>();
+            if (c == null)
+            {
+                _logger.LogError($"{prefab.name} does not have a component of type {typeof(T).Name}");
+                return null;
+            }
+            
+            CreatePool(c);
+        }
+        
+        var pool = GetPool(prefab);
         var instance = pool?.Get();
         var component = instance?.GetComponent<T>();
         if (component != null)

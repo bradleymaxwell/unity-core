@@ -1,3 +1,7 @@
+## [0.10.0] - 09-01-2026
+### Features
+- **Pools** - Altered `Get<T>` so that you can pass in the prefab you want an instance for and specify the component type you want returned of the instance.
+
 ## [0.9.0] - 09-01-2026
 ### Features
 - **Assets** - Added `GetAsync` method to AssetService that allows consumers to load and retrieve an asset in their desired format automatically.
