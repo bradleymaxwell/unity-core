@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using BinhoGames.Core;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -18,7 +19,7 @@ public class InitSceneBootstrapper : SceneBootstrapper
         DontDestroyOnLoad(coroutineRunnerGameObject);
         Locator.Register(coroutineRunner);
         
-        var sceneService = new SceneService(coroutineRunner);
+        var sceneService = new SceneService();
         Locator.Register(sceneService);
         
         var inputService = new InputService(playerInput);
@@ -33,6 +34,6 @@ public class InitSceneBootstrapper : SceneBootstrapper
         
         nextSceneName = string.IsNullOrWhiteSpace(nextSceneName) ? SceneNames.StartScene : nextSceneName;
         yield return sceneService.ShowAsync(nextSceneName);
-        sceneService.UnloadAsync(SceneNames.InitScene);
+        sceneService.UnloadAsync(SceneNames.InitScene).Forget();
     }
 }

@@ -1,3 +1,10 @@
+## [0.11.0] - 10-01-2026
+### Features
+- **Assets** - Asset operation methods can be used with the addressable address of the asset if a script does not have the reference at hand.
+  - **Scenes** 
+    - Removed `CoroutineRunner` as a dependency on the `SceneService` as it is now fully migrated to UniTask.
+    - `SceneLifecycle` now has an `Initialize` function which is called whenever the scene is loaded, which acts as a reliable way of setting up dependencies.
+
 ## [0.10.0] - 09-01-2026
 ### Features
 - **Pools** - Altered `Get<T>` so that you can pass in the prefab you want an instance for and specify the component type you want returned of the instance.

@@ -7,19 +7,13 @@ using UnityEngine.SceneManagement;
 
 public class SceneService
 {
-    private readonly CoroutineRunner _coroutineRunner;
     private readonly Logger _logger;
     private readonly Stack<string> _sceneHistory = new();
     private readonly Dictionary<string, SceneData> _loadedSceneDataByName = new();
     private readonly List<string> _shownScenes = new();
     
-    public SceneService() : this(Locator.Get<CoroutineRunner>())
+    public SceneService()
     {
-    }
-
-    public SceneService(CoroutineRunner coroutineRunner)
-    {
-        _coroutineRunner = coroutineRunner;
         _logger = new Logger(nameof(SceneService));
         
         var initScene = SceneManager.GetSceneByName(SceneNames.InitScene);
@@ -158,6 +152,7 @@ public class SceneService
     {
         _loadedSceneDataByName.Add(sceneData.Name, sceneData);
         sceneData.Lifecycle.HideImmediate(sceneData);
+        sceneData.Lifecycle.Initialize();
     }
 
     private SceneData GetActiveSceneData()

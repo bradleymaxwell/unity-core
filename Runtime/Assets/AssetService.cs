@@ -6,7 +6,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class AssetService
 {
-    private readonly Dictionary<AssetReference, AsyncOperationHandle<UnityEngine.Object>> _loadsByAsset = new();
+    private readonly Dictionary<string, AsyncOperationHandle<Object>> _loadsByAsset = new();
     private readonly Logger _logger;
 
     public AssetService() : this(new Logger(nameof(AssetService)))
@@ -20,48 +20,59 @@ public class AssetService
     
     public async UniTask LoadAsync(AssetReference asset)
     {
-        var load = Addressables.LoadAssetAsync<Object>(asset);
+        await LoadAsync(asset.RuntimeKey.ToString());
+    }
+    
+    public async UniTask LoadAsync(string address)
+    {
+        var load = Addressables.LoadAssetAsync<Object>(address);
         await load.ToUniTask();
         if (load.Status != AsyncOperationStatus.Succeeded)
         {
-            _logger.LogError($"Failed to load asset: {asset}");
+            _logger.LogError($"Failed to load asset: {address}");
         }
         
-        _loadsByAsset[asset] = load;
+        _loadsByAsset[address] = load;
     }
 
-    public void Unload(AssetReference asset)
+    public void Unload(string address)
     {
-        if (_loadsByAsset.TryGetValue(asset, out var load))
+        if (_loadsByAsset.TryGetValue(address, out var load))
         {
             Addressables.Release(load);
-            _loadsByAsset.Remove(asset);
+            _loadsByAsset.Remove(address);
         }
         else
         {
-            _logger.LogWarning($"Failed to unload asset: {asset} as it is unloaded");
+            _logger.LogWarning($"Failed to unload asset: {address} as it is unloaded");
         }
     }
 
     public async UniTask<T> GetAsync<T>(AssetReference asset) where T : Object
     {
-        if (!IsLoaded(asset))
+        var loadedAsset = await GetAsync<T>(asset.RuntimeKey.ToString());
+        return loadedAsset;
+    }
+    
+    public async UniTask<T> GetAsync<T>(string address) where T : Object
+    {
+        if (!IsLoaded(address))
         {
-            await LoadAsync(asset);
+            await LoadAsync(address);
         }
 
-        var loadedAsset = _loadsByAsset[asset];
+        var loadedAsset = _loadsByAsset[address];
         if (loadedAsset.Result is T typedAsset)
         {
             return typedAsset;
         }
         
-        _logger.LogError($"Loaded asset: {asset} as it is not of type {typeof(T)}");
+        _logger.LogError($"Loaded asset: {address} as it is not of type {typeof(T)}");
         return null;
     }
 
-    public bool IsLoaded(AssetReference asset)
+    public bool IsLoaded(string address)
     {
-        return _loadsByAsset.ContainsKey(asset);
+        return _loadsByAsset.ContainsKey(address);
     }
 }

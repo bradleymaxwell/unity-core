@@ -49,32 +49,47 @@ public class LocalStorageService
         }
     }
 
-    public T Load<T>(string id, string relativeDirectory) where T : ISaveable
+    public T Load<T>(string id, string relativeDirectory, bool logErrors = true) where T : ISaveable
     {
         try
         {
             var path = GetJsonPath(relativeDirectory, id);
             if (!File.Exists(path))
             {
-                _logger.LogError($"Saved data for: {id} not found in path: {path}");
+                if (logErrors)
+                {
+                    _logger.LogError($"Saved data for: {id} not found in path: {path}");
+                }
+                
                 return default;
             }
         
-            var data = File.ReadAllText(path);
-            var value = JsonConvert.DeserializeObject<T>(data);
+            var value = Deserialize<T>(path);
             return value;
         }
         catch (Exception e)
         {
-            _logger.LogError($"Failed to load {typeof(T)}: {e.Message}");
+            if (logErrors)
+            {
+                _logger.LogError($"Failed to load {typeof(T)}: {e.Message}");
+            }
+            
             return default;
         }
     }
-
+    
+    private T Deserialize<T>(string path) where T : ISaveable
+    {
+        var data = File.ReadAllText(path);
+        var value = JsonConvert.DeserializeObject<T>(data);
+        return value;
+    }
+    
     private static string GetJsonPath(string relativeFolderPath, string id)
     {
         var folderPath = Path.Combine(Application.persistentDataPath, relativeFolderPath);
         var path = Path.Combine(folderPath, id + ".json");
         return path;
     }
+    
 }

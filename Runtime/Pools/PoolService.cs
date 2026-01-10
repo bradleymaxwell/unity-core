@@ -7,10 +7,14 @@ public class PoolService
     private const int MaxPoolSize = 100;
     private readonly Dictionary<GameObject, ObjectPool<GameObject>> _pools = new();
     private readonly Logger _logger;
-
-    public PoolService()
+    
+    public PoolService() : this(new Logger(nameof(PoolService)))
     {
-        _logger = new Logger(nameof(PoolService));
+    }
+
+    public PoolService(Logger logger)
+    {
+        _logger = logger;
     }
     
     public void CreatePool<T>(T prefab, int initialSize = 0) where T : MonoBehaviour, IPoolable

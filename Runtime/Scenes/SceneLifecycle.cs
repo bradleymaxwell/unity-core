@@ -13,6 +13,10 @@ namespace BinhoGames.Core
             Bootstrapper = GetComponent<SceneBootstrapper>();
         }
 
+        public virtual void Initialize()
+        {
+        }
+        
         public abstract UniTask OnBeforeShowAsync(SceneData sceneData);
         public abstract UniTask OnShowAsync(SceneData sceneData);
         public abstract UniTask OnHideAsync(SceneData sceneData);
