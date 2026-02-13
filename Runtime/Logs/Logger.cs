@@ -19,20 +19,20 @@ public class Logger
         #if LOGS_ENABLED
         if (_isEnabled)
         {
-            Debug.Log(_name + ": " + message);
+            Debug.Log($"<b>{_name}</b>: {message}");
         }
         #endif
     }
 
     public void LogError(string message)
     {
-        Debug.LogError(_name + ": " + message);
+        Debug.LogError($"<b>{_name}</b>: {message}");
     }
 
     public void LogWarning(string message)
     {
         #if WARNINGS_ENABLED
-        Debug.LogWarning(_name + ": " + message);
+        Debug.LogWarning($"<b>{_name}</b>: {message}");
         #endif
     }
 }

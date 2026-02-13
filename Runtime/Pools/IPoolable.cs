@@ -1,4 +1,7 @@
+using UnityEngine;
+
 public interface IPoolable
 {
-    void OnReturnToPool();
+    void Reset();
+    GameObject Prefab { get; set; } 
 }

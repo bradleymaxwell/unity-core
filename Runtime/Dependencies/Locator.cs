@@ -50,6 +50,11 @@ public static class Locator
         TryRegisterInstance(instance);
     }
 
+    public static bool IsRegistered<T>()
+    {
+        return Services.ContainsKey(typeof(T));
+    }
+
     private static bool TryRegisterInstance<TContract>(TContract instance)
     {
         if (Services.ContainsKey(typeof(TContract)))

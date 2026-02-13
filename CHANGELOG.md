@@ -1,3 +1,7 @@
+## [0.12.0] - 13-02-2026
+### Features
+- **Pools** - Fixed pool warming where it was only warming 1 object, now it warms the given amount. Also setting pool objects under one parent pool object in the hierarchy for visibility of what objects are in the pool. Also fixed issue where pool objects were not returning to their pool.
+
 ## [0.11.0] - 10-01-2026
 ### Features
 - **Assets** - Asset operation methods can be used with the addressable address of the asset if a script does not have the reference at hand.
